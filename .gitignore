@@ -1,0 +1,3 @@
+~/.ssh/minecraft
+*.pem
+terrarform.tfvars
