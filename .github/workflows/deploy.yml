@@ -1,0 +1,65 @@
+name: Deploy Minecraft Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: us-east-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      - name: Terraform Apply
+        working-directory: terraform
+        run: terraform apply -auto-approve
+        env:
+          TF_VAR_my_ip: "0.0.0.0/0"
+
+      - name: Get EC2 Public IP
+        working-directory: terraform
+        run: |
+          echo "SERVER_IP=$(terraform output -raw minecraft_server_ip)" >> $GITHUB_ENV
+
+      - name: Install Ansible
+        run: |
+          pip install ansible
+          ansible-galaxy collection install community.docker
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/minecraft
+          chmod 600 ~/.ssh/minecraft
+
+      - name: Generate inventory
+        run: |
+          echo "[minecraft]" > ansible/inventory.ini
+          echo "${{ env.SERVER_IP }} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/minecraft" >> ansible/inventory.ini
+
+      - name: Wait for SSH
+        run: sleep 60
+
+      - name: Run Ansible playbook
+        working-directory: ansible
+        run: |
+          ansible-playbook -i inventory.ini playbook.yml \
+            --ssh-extra-args='-o StrictHostKeyChecking=no'

@@ -1,3 +1,18 @@
-~/.ssh/minecraft
+# Terraform
+terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
+terraform/.terraform.lock.hcl
+terraform/terraform.tfvars
+
+# SSH keys
 *.pem
-terrarform.tfvars
+~/.ssh/minecraft
+
+# Ansible
+ansible/inventory.ini
+ansible/*.retry
+
+# OS
+.DS_Store
+Thumbs.db
