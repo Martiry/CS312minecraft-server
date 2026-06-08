@@ -1,0 +1,39 @@
+---
+- name: Configure Minecraft Server
+  hosts: minecraft
+  become: true
+  remote_user: ec2-user
+  vars:
+    ansible_ssh_private_key_file: ~/.ssh/minecraft
+
+  tasks:
+    - name: Install Docker
+      ansible.builtin.dnf:
+        name: docker
+        state: present
+
+    - name: Start and enable Docker service
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create Minecraft data directory
+      ansible.builtin.file:
+        path: /opt/minecraft/data
+        state: directory
+        mode: '0755'
+
+    - name: Pull and run Minecraft server container
+      community.docker.docker_container:
+        name: minecraft
+        image: itzg/minecraft-server
+        state: started
+        restart_policy: unless-stopped
+        ports:
+          - "25565:25565"
+        volumes:
+          - /opt/minecraft/data:/data
+        env:
+          EULA: "TRUE"
+          MEMORY: "1024M"
