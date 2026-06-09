@@ -8,6 +8,7 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
+# Create a security group
 resource "aws_instance" "minecraft_server" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = "t2.micro"
@@ -16,7 +17,7 @@ resource "aws_instance" "minecraft_server" {
 }
 
 resource "aws_security_group" "minecraft_sg_final" {
-  name        = "minecraft-sg"
+  name        = "minecraft-sg-final"
   description = "Allow SSH and Minecraft traffic"
 
   ingress {
