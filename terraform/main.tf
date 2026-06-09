@@ -46,5 +46,5 @@ resource "aws_security_group" "minecraft_sg_final" {
 
 resource "aws_key_pair" "minecraft_key" {
   key_name   = "minecraft-key"
-  public_key = file("~/.ssh/minecraft.pub")
+  public_key = var.public_key
 }

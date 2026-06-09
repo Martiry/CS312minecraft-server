@@ -33,6 +33,7 @@ jobs:
         run: terraform apply -auto-approve
         env:
           TF_VAR_my_ip: "0.0.0.0/0"
+          TF_VAR_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
 
       - name: Get EC2 Public IP
         working-directory: terraform
@@ -48,7 +49,9 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/minecraft
+          echo "${{ secrets.SSH_PUBLIC_KEY }}" > ~/.ssh/minecraft.pub
           chmod 600 ~/.ssh/minecraft
+          chmod 644 ~/.ssh/minecraft.pub
 
       - name: Generate inventory
         run: |

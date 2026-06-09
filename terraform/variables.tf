@@ -1,4 +1,9 @@
 variable "my_ip" {
-  description = "Your public IP address for SSH access"
+  description = "Public IP address for SSH access"
+  type        = string
+}
+
+variable "public_key" {
+  description = "SSH public key"
   type        = string
 }
