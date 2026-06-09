@@ -31,8 +31,20 @@ jobs:
             echo "Terminating instances: $INSTANCE_IDS"
             aws ec2 terminate-instances --instance-ids $INSTANCE_IDS
             aws ec2 wait instance-terminated --instance-ids $INSTANCE_IDS
+            echo "Instances fully terminated, sleeping 30s for AWS to release network interfaces..."
+            sleep 30
           fi
-          aws ec2 delete-security-group --group-name minecraft-sg-final || true
+          
+          # Retry SG deletion since ENI detachment can lag
+          for i in {1..10}; do
+            if aws ec2 delete-security-group --group-name minecraft-sg-final 2>/dev/null; then
+              echo "Security group deleted"
+              break
+            fi
+            echo "SG still has dependencies, retrying in 15s..."
+            sleep 15
+          done
+          
           aws ec2 delete-key-pair --key-name minecraft-key || true
 
       - name: Setup Terraform
