@@ -7,7 +7,7 @@ data "aws_ami" "amazon_linux" {
     values = ["al2023-ami-*-x86_64"]
   }
 }
-
+# Create an EC2 instance
 resource "aws_instance" "minecraft_server" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = "t2.micro"
