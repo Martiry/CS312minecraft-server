@@ -14,6 +14,11 @@ resource "aws_instance" "minecraft_server" {
   key_name               = aws_key_pair.minecraft_key.key_name
   vpc_security_group_ids = [aws_security_group.minecraft_sg_final.id]
 
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
+  }
+
   tags = {
     Name = "minecraft-server"
   }
