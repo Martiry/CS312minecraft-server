@@ -16,6 +16,7 @@ resource "aws_instance" "minecraft_server" {
   vpc_security_group_ids = [aws_security_group.minecraft_sg_final.id]
 }
 
+# Create a security group
 resource "aws_security_group" "minecraft_sg_final" {
   name        = "minecraft-sg-final"
   description = "Allow SSH and Minecraft traffic"
