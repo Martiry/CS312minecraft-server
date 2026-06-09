@@ -30,7 +30,9 @@ jobs:
 
       - name: Terraform Apply
         working-directory: terraform
-        run: terraform apply -auto-approve
+        run: |
+          terraform destroy -auto-approve || true
+          terraform apply -auto-approve
         env:
           TF_VAR_my_ip: "0.0.0.0/0"
           TF_VAR_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
