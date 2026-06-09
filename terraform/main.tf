@@ -8,12 +8,15 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# Create a security group
 resource "aws_instance" "minecraft_server" {
   ami                    = data.aws_ami.amazon_linux.id
   instance_type          = "t2.micro"
   key_name               = aws_key_pair.minecraft_key.key_name
   vpc_security_group_ids = [aws_security_group.minecraft_sg_final.id]
+
+  tags = {
+    Name = "minecraft-server"
+  }
 }
 
 # Create a security group

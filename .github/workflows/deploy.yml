@@ -21,6 +21,20 @@ jobs:
           aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
           aws-region: us-east-1
 
+      - name: Clean up existing resources
+        run: |
+          INSTANCE_IDS=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=minecraft-server" "Name=instance-state-name,Values=running,pending,stopped" \
+            --query 'Reservations[*].Instances[*].InstanceId' \
+            --output text)
+          if [ -n "$INSTANCE_IDS" ]; then
+            echo "Terminating instances: $INSTANCE_IDS"
+            aws ec2 terminate-instances --instance-ids $INSTANCE_IDS
+            aws ec2 wait instance-terminated --instance-ids $INSTANCE_IDS
+          fi
+          aws ec2 delete-security-group --group-name minecraft-sg-final || true
+          aws ec2 delete-key-pair --key-name minecraft-key || true
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
@@ -30,9 +44,7 @@ jobs:
 
       - name: Terraform Apply
         working-directory: terraform
-        run: |
-          terraform destroy -auto-approve || true
-          terraform apply -auto-approve
+        run: terraform apply -auto-approve
         env:
           TF_VAR_my_ip: "0.0.0.0/0"
           TF_VAR_public_key: ${{ secrets.SSH_PUBLIC_KEY }}
@@ -47,7 +59,7 @@ jobs:
           pip install ansible
           ansible-galaxy collection install community.docker
 
-      - name: Setup SSH key
+      - name: Setup SSH keys
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/minecraft
@@ -60,8 +72,15 @@ jobs:
           echo "[minecraft]" > ansible/inventory.ini
           echo "${{ env.SERVER_IP }} ansible_user=ec2-user ansible_ssh_private_key_file=~/.ssh/minecraft" >> ansible/inventory.ini
 
-      - name: Wait for SSH
-        run: sleep 60
+      - name: Wait for SSH to be available
+        run: |
+          for i in {1..30}; do
+            nc -z -w5 ${{ env.SERVER_IP }} 22 && echo "SSH is up" && exit 0
+            echo "Waiting for SSH..."
+            sleep 10
+          done
+          echo "SSH never came up"
+          exit 1
 
       - name: Run Ansible playbook
         working-directory: ansible
